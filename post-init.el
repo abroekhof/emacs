@@ -224,9 +224,32 @@
   :config
   ;; Optimizations
   (fset #'jsonrpc--log-event #'ignore)
-  (setq jsonrpc-event-hook nil))
+  (setq jsonrpc-event-hook nil)
 
-(use-package treesit-auto
+  :hook
+  (python-mode . eglot-ensure)
+  (protobuf-mode . eglot-ensure)
+  (c++-mode . eglot-ensure)
+  (c++-ts-mode . eglot-ensure))
+
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '((c-mode c++-mode c++-ts-mode)
+                 . ("clangd"
+                    "-j=8"
+                    "--malloc-trim"
+                    "--background-index"
+                    "--clang-tidy"
+                    "--enable-config"
+                    "--completion-style=detailed"
+                    "--pch-storage=memory")))
+  (add-to-list 'eglot-server-programs
+               '((protobuf-mode)
+                 . ("protols")))
+  (add-to-list 'eglot-server-programs
+               '((yaml-mode)
+                 . ("yaml-language-server"
+                    "--stdio"))))
   :ensure t
   :custom
   (treesit-auto-install 'prompt)
