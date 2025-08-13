@@ -361,15 +361,6 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 
-(use-package org-journal
-  :ensure t
-  :defer t
-  :init
-  ;; Change default prefix key; needs to be set before loading org-journal
-  (setq org-journal-prefix-key "C-c j ")
-  :config
-  (setq org-journal-dir "~/quilt/journal/"
-        org-journal-file-type 'weekly))
 
 
 (use-package ef-themes
