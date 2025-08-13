@@ -98,6 +98,9 @@
   :commands (marginalia-mode marginalia-cycle)
   :hook (after-init . marginalia-mode))
 
+(use-package wgrep
+  :ensure t)
+
 (use-package embark-consult
   :ensure t
   :hook
