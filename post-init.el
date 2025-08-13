@@ -37,14 +37,15 @@
   (setq initial-frame-alist '((fullscreen . maximized)))
   (abroekhof/set-default-font))
 
-
-
-
 (use-package emacs
   :init
   (setq-default fill-column 80)
   (delete-selection-mode t)
-  (electric-pair-mode t)) 
+  (electric-pair-mode t))
+
+(use-package project
+  :init
+  (setq project-vc-extra-root-markers '(".project")))
 
 (use-package crux
   :ensure t
