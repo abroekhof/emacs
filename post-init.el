@@ -445,3 +445,67 @@
                         :key (gptel-api-key-from-auth-source "generativelanguage.googleapis.com")
                         :stream t)))
 
+;; Basic Org Mode setup
+(require 'org)
+
+;; Key bindings for common org commands
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c c") 'org-capture)
+
+;; File paths - create these directories if they don't exist
+(setq org-directory "~/org")
+(unless (file-directory-p org-directory)
+  (make-directory org-directory :parents t))
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+
+;;; Org Agenda Configuration
+(setq org-agenda-files (list org-default-notes-file))
+(setq org-agenda-start-on-weekday nil)
+(setq org-agenda-span 7)
+
+;; Define TODO states with fast selection keys
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "IN-PROGRESS(p)" "WAITING(w)" "|" "DONE(d)" "CANCELED(c)")))
+
+;; Make TODO state changes log when they were completed
+(setq org-log-done 'time)
+
+;; Capture templates
+(setq org-capture-templates
+      '(("t" "Tasks" entry
+         (file+headline "" "Inbox")
+         "* TODO %?\n %U")
+        ("m" "Meeting" entry
+         (file+headline "" "Meetings")
+         "* %?\n %U")
+        ("j" "Journal Entry" entry
+         (file+datetree "journal.org")
+         "* %U\n%?")))
+
+;; (setq org-capture-templates
+;;       ;; Explaination of values here:
+;;       ;; https://orgmode.org/manual/Template-elements.html#Template-elements
+;;       `(("t" "Todo" entry (file+olp+datetree "" "Engineering Worklog") "**** TODO %?\n%a" :tree-type week)
+;;         ("m" "Meeting" entry (file+olp+datetree "" "Engineering Worklog") "**** %?\n%t" :tree-type week)
+;;         ("i" "Item" entry (file+olp+datetree "" "Engineering Worklog") "**** %?\n%a" :tree-type week)
+;;         ("a" "Action item" entry (file+olp+datetree "" "Engineering Worklog") "* WAITING %?\n:PROPERTIES:\n:WAITING_ON: %^{Who owns this?}\n:END:\n %i %U %a" :tree-type week)
+;;         ("p" "Perf Note" entry (file+olp+datetree "" "Engineering Worklog") "* %? :perf:\n\n %i %U" :tree-type week)
+;;         ))
+
+
+;; Refile targets - allows refiling to tasks.org or other journal entries
+(setq org-refile-targets '((nil :maxlevel . 3)
+                           (org-agenda-files :maxlevel . 2)))
+
+;; Show refile targets as a completing-read (helm/ivy will use their UI if installed)
+(setq org-outline-path-complete-in-steps nil)
+(setq org-refile-use-outline-path 'file)
+
+;; Save all org buffers after refile
+(advice-add 'org-refile :after 'org-save-all-org-buffers)
+
+;; Some additional useful settings
+(setq org-startup-indented t)           ;; Display files with indentation
+(setq org-agenda-start-on-weekday nil)  ;; Start agenda on current day
+(setq org-agenda-span 7)                ;; Show 7 days in agenda view
