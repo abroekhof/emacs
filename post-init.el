@@ -372,10 +372,10 @@
         org-journal-file-type 'weekly))
 
 
-(use-package leuven-theme
+(use-package ef-themes
   :ensure t
   :config
-  (load-theme 'modus-vivendi-tinted :no-confirm))
+  (load-theme 'ef-dream :no-confirm))
 
 
 ;; UNDO TREE
