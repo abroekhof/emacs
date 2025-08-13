@@ -277,7 +277,7 @@
 
   :config
   (setq corfu-auto t)
-  
+
   ;; Enable Corfu
   :init
   (global-corfu-mode))
@@ -285,7 +285,6 @@
 (use-package kind-icon
   :ensure t
   :after corfu
-  ;:custom
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
@@ -419,10 +418,10 @@
 
 
 ;;; INDENT-GUIDE
-;; The `indent-guide' package provides visual indicators for indentation levels 
-;; in programming modes, making it easier to see code structure at a glance. 
-;; It draws vertical lines (by default, a character of your choice) at each 
-;; level of indentation, helping to improve readability and navigation within 
+;; The `indent-guide' package provides visual indicators for indentation levels
+;; in programming modes, making it easier to see code structure at a glance.
+;; It draws vertical lines (by default, a character of your choice) at each
+;; level of indentation, helping to improve readability and navigation within
 ;; the code.
 (use-package indent-guide
   :defer t
