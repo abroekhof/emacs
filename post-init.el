@@ -437,3 +437,11 @@
   :ensure t
   :config
   (add-hook 'python-base-mode-hook 'pet-mode -10))
+
+(use-package gptel
+  :config
+  (setq gptel-model 'gemini-2.0-flash
+        gptel-backend (gptel-make-gemini "Gemini"
+                        :key (gptel-api-key-from-auth-source "generativelanguage.googleapis.com")
+                        :stream t)))
+
