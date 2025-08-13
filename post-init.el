@@ -350,7 +350,12 @@
   (global-diff-hl-mode))
 
 (use-package blacken
-  :ensure t)
+  :ensure t
+  :defer t
+  :custom
+  (blacken-allow-py36 t)
+  (blacken-skip-string-normalization t)
+  :hook (python-mode-hook . blacken-mode))
 
 (use-package jinja2-mode
   :ensure t
