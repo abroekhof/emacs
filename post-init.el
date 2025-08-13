@@ -250,12 +250,14 @@
                '((yaml-mode)
                  . ("yaml-language-server"
                     "--stdio"))))
+
+;; Apheleia is an auto-formatter.
+(use-package apheleia
   :ensure t
-  :custom
-  (treesit-auto-install 'prompt)
-  :config
-  (treesit-auto-add-to-auto-mode-alist 'all)
-  (global-treesit-auto-mode))
+  :defer t
+  :commands (apheleia-mode
+             apheleia-global-mode)
+  :hook ((prog-mode . apheleia-mode)))
 
 (use-package corfu
   :ensure t
