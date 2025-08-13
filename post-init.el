@@ -433,7 +433,7 @@
   (setq indent-guide-char "│"))    ;; Set the character used for the indent guide.
 
 
-(use-package pyvenv
+(use-package pet
   :ensure t
   :config
-  (pyvenv-mode 1))
+  (add-hook 'python-base-mode-hook 'pet-mode -10))
