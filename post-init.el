@@ -1,25 +1,143 @@
 ;;; post-init.el --- DESCRIPTION -*- no-byte-compile: t; lexical-binding: t; -*-
 
+;; Native compilation enhances Emacs performance by converting Elisp code into
+;; native machine code, resulting in faster execution and improved
+;; responsiveness.
+(use-package compile-angel
+  :demand t
+  :ensure t
+  :custom
+  ;; Set `compile-angel-verbose` to nil to suppress output from compile-angel.
+  ;; Drawback: The minibuffer will not display compile-angel's actions.
+  (compile-angel-verbose t)
+
+  :config
+  ;; The following directive prevents compile-angel from compiling your init
+  ;; files. If you choose to remove this push to `compile-angel-excluded-files'
+  ;; and compile your pre/post-init files, ensure you understand the
+  ;; implications and thoroughly test your code. For example, if you're using
+  ;; the `use-package' macro, you'll need to explicitly add:
+  ;; (eval-when-compile (require 'use-package))
+  ;; at the top of your init file.
+  (push "/init.el" compile-angel-excluded-files)
+  (push "/early-init.el" compile-angel-excluded-files)
+  (push "/pre-init.el" compile-angel-excluded-files)
+  (push "/post-init.el" compile-angel-excluded-files)
+  (push "/pre-early-init.el" compile-angel-excluded-files)
+  (push "/post-early-init.el" compile-angel-excluded-files)
+
+  ;; A local mode that compiles .el files whenever the user saves them.
+  ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+
+  ;; A global mode that compiles .el files prior to loading them via `load' or
+  ;; `require'. Additionally, it compiles all packages that were loaded before
+  ;; the mode `compile-angel-on-load-mode' was activated.
+  (compile-angel-on-load-mode 1))
+
+;; This automates the process of updating installed packages
+(use-package auto-package-update
+  :ensure t
+  :custom
+  ;; Set the number of days between automatic updates.
+  ;; Here, packages will only be updated if at least 7 days have passed
+  ;; since the last successful update.
+  (auto-package-update-interval 7)
+
+  ;; Suppress display of the *auto-package-update results* buffer after updates.
+  ;; This keeps the user interface clean and avoids unnecessary interruptions.
+  (auto-package-update-hide-results t)
+
+  ;; Automatically delete old package versions after updates to reduce disk
+  ;; usage and keep the package directory clean. This prevents the accumulation
+  ;; of outdated files in Emacs’s package directory, which consume
+  ;; unnecessary disk space over time.
+  (auto-package-update-delete-old-versions t)
+
+  ;; Uncomment the following line to enable a confirmation prompt
+  ;; before applying updates. This can be useful if you want manual control.
+  ;; (auto-package-update-prompt-before-update t)
+
+  :config
+  ;; Run package updates automatically at startup, but only if the configured
+  ;; interval has elapsed.
+  (auto-package-update-maybe)
+
+  ;; Schedule a background update attempt daily at 10:00 AM.
+  ;; This uses Emacs' internal timer system. If Emacs is running at that time,
+  ;; the update will be triggered. Otherwise, the update is skipped for that
+  ;; day. Note that this scheduled update is independent of
+  ;; `auto-package-update-maybe` and can be used as a complementary or
+  ;; alternative mechanism.
+  (auto-package-update-at-time "10:00"))
+
 ;; Auto-revert in Emacs is a feature that automatically updates the
 ;; contents of a buffer to reflect changes made to the underlying file
 ;; on disk.
-(add-hook 'after-init-hook #'global-auto-revert-mode)
+(use-package autorevert
+  :ensure nil
+  :commands (auto-revert-mode global-auto-revert-mode)
+  :hook
+  (after-init . global-auto-revert-mode)
+  :custom
+  (auto-revert-interval 3)
+  (auto-revert-remote-files nil)
+  (auto-revert-use-notify t)
+  (auto-revert-avoid-polling nil)
+  (auto-revert-verbose t))
 
-;; recentf is an Emacs package that maintains a list of recently
+;; Recentf is an Emacs package that maintains a list of recently
 ;; accessed files, making it easier to reopen files you have worked on
 ;; recently.
-(add-hook 'after-init-hook #'recentf-mode)
+(use-package recentf
+  :ensure nil
+  :commands (recentf-mode recentf-cleanup)
+  :hook
+  (after-init . recentf-mode)
+
+  :custom
+  (recentf-auto-cleanup (if (daemonp) 300 'never))
+  (recentf-exclude
+   (list "\\.tar$" "\\.tbz2$" "\\.tbz$" "\\.tgz$" "\\.bz2$"
+         "\\.bz$" "\\.gz$" "\\.gzip$" "\\.xz$" "\\.zip$"
+         "\\.7z$" "\\.rar$"
+         "COMMIT_EDITMSG\\'"
+         "\\.\\(?:gz\\|gif\\|svg\\|png\\|jpe?g\\|bmp\\|xpm\\)$"
+         "-autoloads\\.el$" "autoload\\.el$"))
+
+  :config
+  ;; A cleanup depth of -90 ensures that `recentf-cleanup' runs before
+  ;; `recentf-save-list', allowing stale entries to be removed before the list
+  ;; is saved by `recentf-save-list', which is automatically added to
+  ;; `kill-emacs-hook' by `recentf-mode'.
+  (add-hook 'kill-emacs-hook #'recentf-cleanup -90))
 
 ;; savehist is an Emacs feature that preserves the minibuffer history between
 ;; sessions. It saves the history of inputs in the minibuffer, such as commands,
 ;; search strings, and other prompts, to a file. This allows users to retain
 ;; their minibuffer history across Emacs restarts.
-(add-hook 'after-init-hook #'savehist-mode)
+(use-package savehist
+  :ensure nil
+  :commands (savehist-mode savehist-save)
+  :hook
+  (after-init . savehist-mode)
+  :custom
+  (savehist-autosave-interval 600)
+  (savehist-additional-variables
+   '(kill-ring                        ; clipboard
+     register-alist                   ; macros
+     mark-ring global-mark-ring       ; marks
+     search-ring regexp-search-ring)))
 
 ;; save-place-mode enables Emacs to remember the last location within a file
 ;; upon reopening. This feature is particularly beneficial for resuming work at
 ;; the precise point where you previously left off.
-(add-hook 'after-init-hook #'save-place-mode)
+(use-package saveplace
+  :ensure nil
+  :commands (save-place-mode save-place-local-mode)
+  :hook
+  (after-init . save-place-mode)
+  :custom
+  (save-place-limit 400))
 
 ;; Set fill column
 
@@ -47,6 +165,57 @@
   :init
   (setq project-vc-extra-root-markers '(".project")))
 
+;; The flyspell package is a built-in Emacs minor mode that provides
+;; on-the-fly spell checking. It highlights misspelled words as you type,
+;; offering interactive corrections. In text modes, it checks the entire buffer,
+;; while in programming modes, it typically checks only comments and strings. It
+;; integrates with external spell checkers like aspell, hunspell, or
+;; ispell to provide suggestions and corrections.
+;;
+;; NOTE: flyspell-mode can become slow when using Aspell, especially with large
+;; buffers or aggressive suggestion settings like --sug-mode=ultra. This
+;; slowdown occurs because Flyspell checks words dynamically as you type or
+;; navigate text, requiring frequent communication between Emacs and the
+;; external Aspell process. Each check involves sending words to Aspell and
+;; receiving results, which introduces overhead from process invocation and
+;; inter-process communication.
+(use-package ispell
+  :ensure nil
+  :commands (ispell ispell-minor-mode)
+  :custom
+  ;; Set the ispell program name to aspell
+  (ispell-program-name "aspell")
+
+  ;; Define the "en_US" spell-check dictionary locally, telling Emacs to use
+  ;; UTF-8 encoding, match words using alphabetic characters, allow apostrophes
+  ;; inside words, treat non-alphabetic characters as word boundaries, and pass
+  ;; -d en_US to the underlying spell-check program.
+  (ispell-local-dictionary-alist
+   '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
+
+  ;; Configures Aspell's suggestion mode to "ultra", which provides more
+  ;; aggressive and detailed suggestions for misspelled words. The language
+  ;; is set to "en_US" for US English, which can be replaced with your desired
+  ;; language code (e.g., "en_GB" for British English, "de_DE" for German).
+  (ispell-extra-args '(; "--sug-mode=ultra"
+                       "--lang=en_US")))
+
+;; The flyspell package is a built-in Emacs minor mode that provides
+;; on-the-fly spell checking. It highlights misspelled words as you type,
+;; offering interactive corrections.
+(use-package flyspell
+  :ensure nil
+  :commands flyspell-mode
+
+  :config
+  ;; Remove strings from Flyspell
+  (setq flyspell-prog-text-faces (delq 'font-lock-string-face
+                                       flyspell-prog-text-faces))
+
+  ;; Remove doc from Flyspell
+  (setq flyspell-prog-text-faces (delq 'font-lock-doc-face
+                                       flyspell-prog-text-faces)))
+
 (use-package crux
   :ensure t
   :bind
@@ -72,46 +241,50 @@
   ;; Speed up vterm
   (setq vterm-timer-delay 0.01))
 
+(use-package wgrep
+  :ensure t)
+
+;; Vertico provides a vertical completion interface, making it easier to
+;; navigate and select from completion candidates (e.g., when `M-x` is pressed).
 (use-package vertico
   ;; (Note: It is recommended to also enable the savehist package.)
   :ensure t
-  :defer t
-  :commands vertico-mode
-  :hook (after-init . vertico-mode))
+  :config
+  (vertico-mode))
 
+;; Vertico leverages Orderless' flexible matching capabilities, allowing users
+;; to input multiple patterns separated by spaces, which Orderless then
+;; matches in any order against the candidates.
 (use-package orderless
-  ;; Vertico leverages Orderless' flexible matching capabilities, allowing users
-  ;; to input multiple patterns separated by spaces, which Orderless then
-  ;; matches in any order against the candidates.
   :ensure t
   :custom
   (completion-styles '(orderless basic))
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
 
+;; Marginalia allows Embark to offer you preconfigured actions in more contexts.
+;; In addition to that, Marginalia also enhances Vertico by adding rich
+;; annotations to the completion candidates displayed in Vertico's interface.
 (use-package marginalia
-  ;; Marginalia allows Embark to offer you preconfigured actions in more contexts.
-  ;; In addition to that, Marginalia also enhances Vertico by adding rich
-  ;; annotations to the completion candidates displayed in Vertico's interface.
   :ensure t
-  :defer t
   :commands (marginalia-mode marginalia-cycle)
   :hook (after-init . marginalia-mode))
 
-(use-package wgrep
-  :ensure t)
-
-(use-package embark-consult
-  :ensure t
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
-
+;; Embark integrates with Consult and Vertico to provide context-sensitive
+;; actions and quick access to commands based on the current selection, further
+;; improving user efficiency and workflow within Emacs. Together, they create a
+;; cohesive and powerful environment for managing completions and interactions.
 (use-package embark
   ;; Embark is an Emacs package that acts like a context menu, allowing
   ;; users to perform context-sensitive actions on selected items
   ;; directly from the completion interface.
   :ensure t
-  :defer t
+  :commands (embark-act
+             embark-dwim
+             embark-export
+             embark-collect
+             embark-bindings
+             embark-prefix-help-command)
   :bind
   (("C-." . embark-act)         ;; pick some comfortable binding
    ("C-;" . embark-dwim)        ;; good alternative: M-.
@@ -127,6 +300,13 @@
                  nil
                  (window-parameters (mode-line-format . none)))))
 
+(use-package embark-consult
+  :ensure t
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
+;; Consult offers a suite of commands for efficient searching, previewing, and
+;; interacting with buffers, file contents, and more, improving various tasks.
 (use-package consult
   :ensure t
   :bind (;; C-c bindings in `mode-specific-map'
@@ -197,16 +377,40 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
+  ;; Aggressive asynchronous that yield instantaneous results. (suitable for
+  ;; high-performance systems.) Note: Minad, the author of Consult, does not
+  ;; recommend aggressive values.
+  ;; Read: https://github.com/minad/consult/discussions/951
+  ;;
+  ;; However, the author of minimal-emacs.d uses these parameters to achieve
+  ;; immediate feedback from Consult.
+  ;; (setq consult-async-input-debounce 0.02
+  ;;       consult-async-input-throttle 0.05
+  ;;       consult-async-refresh-delay 0.02)
+
   :config
   (consult-customize
    consult-theme :preview-key '(:debounce 0.2 any)
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
+   consult-source-bookmark consult-source-file-register
+   consult-source-recent-file consult-source-project-recent-file
    ;; :preview-key "M-."
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<"))
+
+;; Tree-sitter in Emacs is an incremental parsing system introduced in Emacs 29
+;; that provides precise, high-performance syntax highlighting. It supports a
+;; broad set of programming languages, including Bash, C, C++, C#, CMake, CSS,
+;; Dockerfile, Go, Java, JavaScript, JSON, Python, Rust, TOML, TypeScript, YAML,
+;; Elisp, Lua, Markdown, and many others.
+;; (use-package treesit-auto
+;;   :ensure t
+;;   :custom
+;;   (treesit-auto-install 'prompt)
+;;   :config
+;;   (treesit-auto-add-to-auto-mode-alist 'all)
+;;   (global-treesit-auto-mode))
 
 
 (use-package eglot
@@ -251,17 +455,49 @@
                  . ("yaml-language-server"
                     "--stdio"))))
 
-;; Apheleia is an auto-formatter.
+;; Apheleia is an Emacs package designed to run code formatters (e.g., Shfmt,
+;; Black and Prettier) asynchronously without disrupting the cursor position.
 (use-package apheleia
   :ensure t
-  :defer t
   :commands (apheleia-mode
              apheleia-global-mode)
   :hook ((prog-mode . apheleia-mode)))
 
+;; The official collection of snippets for yasnippet.
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
+
+;; YASnippet is a template system designed that enhances text editing by
+;; enabling users to define and use snippets. When a user types a short
+;; abbreviation, YASnippet automatically expands it into a full template, which
+;; can include placeholders, fields, and dynamic content.
+(use-package yasnippet
+  :ensure t
+  :commands (yas-minor-mode
+             yas-global-mode)
+
+  :hook
+  (after-init . yas-global-mode)
+
+  :custom
+  (yas-also-auto-indent-first-line t)  ; Indent first line of snippet
+  (yas-also-indent-empty-lines t)
+  (yas-snippet-revival nil)  ; Setting this to t causes issues with undo
+  (yas-wrap-around-region nil) ; Do not wrap region when expanding snippets
+  ;; (yas-triggers-in-field nil)  ; Disable nested snippet expansion
+  ;; (yas-indent-line 'fixed) ; Do not auto-indent snippet content
+  ;; (yas-prompt-functions '(yas-no-prompt))  ; No prompt for snippet choices
+
+  :init
+  ;; Suppress verbose messages
+  (setq yas-verbosity 0))
+
+;; Corfu enhances in-buffer completion by displaying a compact popup with
+;; current candidates, positioned either below or above the point. Candidates
+;; can be selected by navigating up or down.
 (use-package corfu
   :ensure t
-  :defer t
   :commands (corfu-mode global-corfu-mode)
 
   :hook ((prog-mode . corfu-mode)
@@ -269,17 +505,14 @@
          (eshell-mode . corfu-mode))
 
   :custom
-  _  ;; Hide commands in M-x which do not apply to the current mode.
+  ;; Hide commands in M-x which do not apply to the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   ;; Disable Ispell completion function. As an alternative try `cape-dict'.
   (text-mode-ispell-word-completion nil)
   (tab-always-indent 'complete)
 
-  :config
-  (setq corfu-auto t)
-
   ;; Enable Corfu
-  :init
+  :config
   (global-corfu-mode))
 
 (use-package kind-icon
@@ -288,9 +521,11 @@
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
+;; Cape, or Completion At Point Extensions, extends the capabilities of
+;; in-buffer completion. It integrates with Corfu or the default completion UI,
+;; by providing additional backends through completion-at-point-functions.
 (use-package cape
   :ensure t
-  :defer t
   :commands (cape-dabbrev cape-file cape-elisp-block)
   :bind ("C-c p" . cape-prefix-map)
   :init
@@ -316,6 +551,7 @@
 (setq auth-sources '("~/.authinfo"))
 
 (use-package markdown-mode
+  :ensure t
   :hook ((markdown-mode . visual-line-mode)))
 
 (use-package yaml-mode
@@ -340,21 +576,23 @@
   :bind (("M-o" . ace-window)
          ("M-O" . ace-swap-window)))
 
+(use-package avy
+  :ensure t
+  :commands (avy-goto-char
+             avy-goto-char-2
+             avy-next)
+  :init
+  (global-set-key (kbd "C-'") 'avy-goto-char-2))
+
 ;; Move through windows with Shift-<arrow keys>
 (windmove-default-keybindings 'shift) ; You can use other modifiers here
+
 
 (use-package diff-hl
   :ensure t
   :config
   (global-diff-hl-mode))
 
-(use-package blacken
-  :ensure t
-  :defer t
-  :custom
-  (blacken-allow-py36 t)
-  (blacken-skip-string-normalization t)
-  :hook (python-mode-hook . blacken-mode))
 
 (use-package jinja2-mode
   :ensure t
@@ -363,9 +601,6 @@
 (use-package rainbow-delimiters
   :ensure t
   :hook (prog-mode . rainbow-delimiters-mode))
-
-
-
 
 (use-package ef-themes
   :ensure t
@@ -396,6 +631,7 @@
   :config
   ;; Set the directory where `undo-tree' will save its history files.
   ;; This keeps undo history across sessions, stored in a cache directory.
+  (make-directory "~/.emacs.d/.cache/undo" t)
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/.cache/undo"))))
 
 
@@ -437,74 +673,55 @@
   :config
   (add-hook 'python-base-mode-hook 'pet-mode -10))
 
-(use-package gptel
+;; Inherit shell PATH so tools like fnm-managed binaries are available
+(use-package exec-path-from-shell
+  :ensure t
   :config
-  (setq gptel-model 'gemini-2.0-flash
-        gptel-backend (gptel-make-gemini "Gemini"
-                        :key (gptel-api-key-from-auth-source "generativelanguage.googleapis.com")
-                        :stream t)))
+  (exec-path-from-shell-initialize))
+
+(use-package claude-code-ide
+  :vc (:url "https://github.com/manzaltu/claude-code-ide.el" :rev :newest)
+  :bind ("C-c C-'" . claude-code-ide-menu) ; Set your favorite keybinding
+  :config
+  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
 
 ;; Basic Org Mode setup
 (require 'org)
 
-;; Key bindings for common org commands
-(global-set-key (kbd "C-c l") 'org-store-link)
-(global-set-key (kbd "C-c a") 'org-agenda)
-(global-set-key (kbd "C-c c") 'org-capture)
+;; Your daily notes file
+(setq org-directory (expand-file-name "~/notes"))
 
-;; File paths - create these directories if they don't exist
-(setq org-directory "~/org")
-(unless (file-directory-p org-directory)
-  (make-directory org-directory :parents t))
-(setq org-default-notes-file (concat org-directory "/notes.org"))
+(unless (file-directory-p org-directory) (make-directory org-directory t))
 
-;;; Org Agenda Configuration
-(setq org-agenda-files (list org-default-notes-file))
-(setq org-agenda-start-on-weekday nil)
-(setq org-agenda-span 7)
+(defun xah-copy-file-path (&optional DirPathOnlyQ)
+  "Copy current buffer file path or dired path.
+Result is full path.
+If `universal-argument' is called first, copy only the dir path.
 
-;; Define TODO states with fast selection keys
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "IN-PROGRESS(p)" "WAITING(w)" "|" "DONE(d)" "CANCELED(c)")))
+If in dired, copy the current or marked files.
 
-;; Make TODO state changes log when they were completed
-(setq org-log-done 'time)
+If a buffer is not file and not dired, copy value of `default-directory'.
 
-;; Capture templates
-(setq org-capture-templates
-      '(("t" "Tasks" entry
-         (file+headline "" "Inbox")
-         "* TODO %?\n %U")
-        ("m" "Meeting" entry
-         (file+headline "" "Meetings")
-         "* %?\n %U")
-        ("j" "Journal Entry" entry
-         (file+datetree "journal.org")
-         "* %U\n%?")))
-
-;; (setq org-capture-templates
-;;       ;; Explaination of values here:
-;;       ;; https://orgmode.org/manual/Template-elements.html#Template-elements
-;;       `(("t" "Todo" entry (file+olp+datetree "" "Engineering Worklog") "**** TODO %?\n%a" :tree-type week)
-;;         ("m" "Meeting" entry (file+olp+datetree "" "Engineering Worklog") "**** %?\n%t" :tree-type week)
-;;         ("i" "Item" entry (file+olp+datetree "" "Engineering Worklog") "**** %?\n%a" :tree-type week)
-;;         ("a" "Action item" entry (file+olp+datetree "" "Engineering Worklog") "* WAITING %?\n:PROPERTIES:\n:WAITING_ON: %^{Who owns this?}\n:END:\n %i %U %a" :tree-type week)
-;;         ("p" "Perf Note" entry (file+olp+datetree "" "Engineering Worklog") "* %? :perf:\n\n %i %U" :tree-type week)
-;;         ))
-
-
-;; Refile targets - allows refiling to tasks.org or other journal entries
-(setq org-refile-targets '((nil :maxlevel . 3)
-                           (org-agenda-files :maxlevel . 2)))
-
-;; Show refile targets as a completing-read (helm/ivy will use their UI if installed)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-refile-use-outline-path 'file)
-
-;; Save all org buffers after refile
-(advice-add 'org-refile :after 'org-save-all-org-buffers)
-
-;; Some additional useful settings
-(setq org-startup-indented t)           ;; Display files with indentation
-(setq org-agenda-start-on-weekday nil)  ;; Start agenda on current day
-(setq org-agenda-span 7)                ;; Show 7 days in agenda view
+URL `http://xahlee.info/emacs/emacs/emacs_copy_file_path.html'
+Created: 2018-06-18
+Version: 2021-09-30"
+  (interactive "P")
+  (let ((xfpath
+         (if (eq major-mode 'dired-mode)
+             (progn
+               (let ((xresult (mapconcat #'identity
+                                         (dired-get-marked-files) "\n")))
+                 (if (equal (length xresult) 0)
+                     (progn default-directory )
+                   (progn xresult))))
+           (if buffer-file-name
+               buffer-file-name
+             (expand-file-name default-directory)))))
+    (kill-new
+     (if DirPathOnlyQ
+         (progn
+           (message "Directory copied: %s" (file-name-directory xfpath))
+           (file-name-directory xfpath))
+       (progn
+         (message "File path copied: %s" xfpath)
+         xfpath )))))
