@@ -399,20 +399,6 @@
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<"))
 
-;; Tree-sitter in Emacs is an incremental parsing system introduced in Emacs 29
-;; that provides precise, high-performance syntax highlighting. It supports a
-;; broad set of programming languages, including Bash, C, C++, C#, CMake, CSS,
-;; Dockerfile, Go, Java, JavaScript, JSON, Python, Rust, TOML, TypeScript, YAML,
-;; Elisp, Lua, Markdown, and many others.
-;; (use-package treesit-auto
-;;   :ensure t
-;;   :custom
-;;   (treesit-auto-install 'prompt)
-;;   :config
-;;   (treesit-auto-add-to-auto-mode-alist 'all)
-;;   (global-treesit-auto-mode))
-
-
 (use-package eglot
   :ensure nil
   :defer t
@@ -679,18 +665,20 @@
   :config
   (exec-path-from-shell-initialize))
 
-(use-package claude-code-ide
-  :vc (:url "https://github.com/manzaltu/claude-code-ide.el" :rev :newest)
-  :bind ("C-c C-'" . claude-code-ide-menu) ; Set your favorite keybinding
-  :config
-  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+(use-package agent-shell
+  :vc (:url "https://github.com/xenodium/agent-shell" :rev :newest)
+  :custom
+  (agent-shell-tool-use-expand-by-default t)
+  :ensure-system-package
+  ;; Add agent installation configs here
+  ((claude . "brew install claude-code")
+   (claude-agent-acp . "npm install -g @zed-industries/claude-agent-acp")))
 
 ;; Basic Org Mode setup
 (require 'org)
 
 ;; Your daily notes file
 (setq org-directory (expand-file-name "~/notes"))
-
 (unless (file-directory-p org-directory) (make-directory org-directory t))
 
 (defun xah-copy-file-path (&optional DirPathOnlyQ)

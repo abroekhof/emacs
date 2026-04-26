@@ -653,3 +653,4 @@ This should be called after changing `auto-save-list-file-prefix'."
 ;; End:
 
 ;;; init.el ends here
+(put 'magit-clean 'disabled nil)
