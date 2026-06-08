@@ -426,6 +426,11 @@
   (add-to-list 'eglot-server-programs
                '((c-mode c++-mode c++-ts-mode)
                  . ("clangd"
+                    ;; Allow clangd to run Bazel's compiler drivers (hermetic
+                    ;; clang wrapper + aarch64 cross-gcc) so it resolves their
+                    ;; builtin/system includes. Basename-anchored globs match
+                    ;; wherever the bazel cache resolves to.
+                    "--query-driver=**/bin/aarch64-none-linux-gnu-gcc,**/bin/cc_wrapper.sh,**/bin/clang,**/bin/clang++"
                     "-j=8"
                     "--malloc-trim"
                     "--background-index"
