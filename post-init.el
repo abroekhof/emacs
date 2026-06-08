@@ -419,12 +419,14 @@
   :hook
   (python-mode . eglot-ensure)
   (protobuf-mode . eglot-ensure)
+  (c-mode . eglot-ensure)
+  (c-ts-mode . eglot-ensure)
   (c++-mode . eglot-ensure)
   (c++-ts-mode . eglot-ensure))
 
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
-               '((c-mode c++-mode c++-ts-mode)
+               '((c-mode c-ts-mode c++-mode c++-ts-mode)
                  . ("clangd"
                     ;; Allow clangd to run Bazel's compiler drivers (hermetic
                     ;; clang wrapper + aarch64 cross-gcc) so it resolves their
