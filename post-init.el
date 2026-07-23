@@ -241,6 +241,24 @@
   ;; Speed up vterm
   (setq vterm-timer-delay 0.01))
 
+;; Decode mouse events in current and future terminal frames so wheel and mouse
+;; input arrive as Emacs events instead of literal xterm escape sequences.
+(use-package xt-mouse
+  :ensure nil
+  :config
+  (xterm-mouse-mode 1))
+
+;; A fast terminal implemented as a native Emacs module.
+(use-package ghostel
+  :ensure t
+  :commands ghostel
+  :custom
+  ;; Keep the native module outside package.el's versioned directories so an
+  ;; automatic package update cannot remove a module loaded by the daemon.
+  (ghostel-module-directory
+   (expand-file-name ".cache/ghostel/" user-emacs-directory))
+  (ghostel-module-auto-install 'download))
+
 (use-package wgrep
   :ensure t)
 
