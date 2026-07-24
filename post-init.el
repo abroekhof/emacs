@@ -558,7 +558,9 @@
 
 (use-package magit
   :ensure t
-  :bind (("C-x g" . magit-status)))
+  :bind (("C-x g" . magit-status))
+  :init
+  (put 'magit-clean 'disabled nil))
 (setq auth-sources '("~/.authinfo"))
 
 (use-package markdown-mode
